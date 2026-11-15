@@ -191,13 +191,14 @@ proxy-groups:
   - { name: Nvidia, <<: *default }
   - { name: OpenWrt, <<: *default }
   - { name: Popcorn, <<: *default }
-  # Apple 优先新加坡；连通性检测失败时切到香港，不包含直连候选。
+  # Apple 按新加坡、香港、国内顺序故转；国内出口与 Apple-CN 一致（默认直连）。
   # 检测仅判断网络连通，不判断 Apple Intelligence 的地区或账号可用性。
   - name: Apple
     type: fallback
     proxies:
       - "新加坡故转"
       - "香港故转"
+      - "国内"
     url: https://cp.cloudflare.com/generate_204
     interval: 90
     timeout: 4500
@@ -568,7 +569,7 @@ rules:
   - RULE-SET,Steam_CDN_Domain / Domain,Steam_CDN_Domain
   - RULE-SET,Steam_CDN_IP / IP,Steam_CDN_IP,no-resolve
 
-  # Intelligence 专用规则优先并使用 AI 策略；Apple-CN 跟随国内，其余 Apple 走新加坡/香港。
+  # Intelligence 专用规则优先并使用 AI 策略；Apple-CN 跟随国内，其余 Apple 按新加坡/香港/国内故转。
   # Apple 分类先于通用 cn 集合，防止非 Apple-CN 的 Apple 流量被国内兜底覆盖。
   - RULE-SET,AppleIntelligence / Domain,AppleIntelligence
   - RULE-SET,Apple-CN / Domain,Apple-CN
