@@ -177,7 +177,8 @@ proxy-groups:
   - { name: Perplexity, <<: *ai_default }
   - { name: Meta AI, <<: *ai_default }
   - { name: Spotify, <<: *default }
-  - { name: AppleIntelligence, <<: *ai_default }
+  # Apple Intelligence 跟随 Apple 出口，避免 AI 默认组分配到其他地区。
+  - { name: AppleIntelligence, type: select, proxies: [Apple] }
   - { name: Truth, <<: *default }
   - { name: Twitter, <<: *default }
   # 社交与通讯业务各自选择出口
@@ -190,8 +191,20 @@ proxy-groups:
   - { name: Nvidia, <<: *default }
   - { name: OpenWrt, <<: *default }
   - { name: Popcorn, <<: *default }
-  # Apple 和特殊业务默认直连
-  - { name: Apple, <<: *direct_default }
+  # Apple 优先新加坡；连通性检测失败时切到香港，不包含直连候选。
+  # 检测仅判断网络连通，不判断 Apple Intelligence 的地区或账号可用性。
+  - name: Apple
+    type: fallback
+    proxies:
+      - "新加坡故转"
+      - "香港故转"
+    url: https://cp.cloudflare.com/generate_204
+    interval: 90
+    timeout: 4500
+    max-failed-times: 2
+    lazy: false
+    expected-status: 204
+  # 特殊业务默认直连
   - { name: Special, <<: *direct_default }
   - { name: Steam, <<: *default }
   - { name: Steam_CDN_Domain, <<: *direct_default }
@@ -202,7 +215,8 @@ proxy-groups:
   #  通用默认策略组
   - { name: Amazon, <<: *default }
   - { name: Games, <<: *default }
-  - { name: Apple-CN, <<: *direct_default }
+  # 国内适用的 Apple 服务跟随“国内”（默认直连），不继承 Apple 跨区出口。
+  - { name: Apple-CN, type: select, proxies: [国内] }
   - { name: Google, <<: *default }
   - { name: Microsoft, <<: *default }
   - { name: Adobe, <<: *default }
@@ -554,6 +568,13 @@ rules:
   - RULE-SET,Steam_CDN_Domain / Domain,Steam_CDN_Domain
   - RULE-SET,Steam_CDN_IP / IP,Steam_CDN_IP,no-resolve
 
+  # Intelligence 专用规则优先；Apple-CN 跟随国内，其余 Apple 走新加坡/香港。
+  # Apple 分类先于通用 cn 集合，防止非 Apple-CN 的 Apple 流量被国内兜底覆盖。
+  - RULE-SET,AppleIntelligence / Domain,AppleIntelligence
+  - RULE-SET,Apple-CN / Domain,Apple-CN
+  - RULE-SET,Apple-Custom / Domain,Apple
+  - RULE-SET,Apple / Domain,Apple
+
   # 已确认国内域名优先分类；cn 集合包含 bilivideo.com 及其子域名。
   # 放在第三方业务和通用代理规则之前，避免国内 CDN 被宽泛规则抢先匹配。
   - RULE-SET,EmbyDirect,EmbyDirect
@@ -572,7 +593,6 @@ rules:
   - RULE-SET,Gemini / Domain,Gemini
   - RULE-SET,Groq / Domain,ChatGPT
   - RULE-SET,Grok / Domain,ChatGPT
-  - RULE-SET,AppleIntelligence / Domain,AppleIntelligence
 
   # 社交 / 通讯
   - RULE-SET,Telegram / Domain,Telegram
@@ -583,11 +603,6 @@ rules:
   - RULE-SET,Twitter / Domain,Twitter
   - RULE-SET,Reddit / Domain,Reddit
   - RULE-SET,Truth / Domain,Truth
-
-  # Apple 业务
-  - RULE-SET,Apple-CN / Domain,Apple-CN
-  - RULE-SET,Apple-Custom / Domain,Apple
-  - RULE-SET,Apple / Domain,Apple
 
   # 影音流媒体
   - RULE-SET,YouTube / Domain,YouTube
