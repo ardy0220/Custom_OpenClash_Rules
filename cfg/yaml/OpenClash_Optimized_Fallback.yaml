@@ -112,6 +112,32 @@ direct-default: &direct_default
     - "全部节点手动"
     - "拒绝"
 
+# 社交通讯、Amazon 和 Games 按地区优先级自动故转；各业务独立检测。
+regional-fallback: &regional_fallback
+  type: fallback
+  proxies:
+    - "香港自动"
+    - "新加坡自动"
+    - "日本自动"
+    - "韩国自动"
+    - "美国自动"
+    - "台湾自动"
+    - "加拿大自动"
+    - "英国自动"
+    - "法国自动"
+    - "德国自动"
+    - "荷兰自动"
+    - "土耳其自动"
+    - "俄罗斯自动"
+    - "其他地区自动"
+    - "全部节点自动"
+  url: https://cp.cloudflare.com/generate_204
+  interval: 90
+  timeout: 4500
+  max-failed-times: 2
+  lazy: false
+  expected-status: 204
+
 proxy-groups:
   # 通用检测仅判断网络连通，不判断 AI/流媒体解锁或账号可用性。
   # 所有候选失效时 fallback 仍尝试首项；empty-fallback 仅用于过滤后无节点。
@@ -179,14 +205,14 @@ proxy-groups:
   - { name: Spotify, <<: *default }
   # Apple Intelligence 使用 AI 策略，独立于 Apple 常规服务出口。
   - { name: AppleIntelligence, <<: *ai_default }
-  - { name: Truth, <<: *default }
-  - { name: Twitter, <<: *default }
-  # 社交与通讯业务各自选择出口
-  - { name: Telegram, <<: *default }
-  - { name: Discord, <<: *default }
-  - { name: Reddit, <<: *default }
-  - { name: WhatsApp, <<: *default }
-  - { name: Facebook, <<: *default }
+  - { name: Truth, <<: *regional_fallback }
+  - { name: Twitter, <<: *regional_fallback }
+  # 社交与通讯按香港、新加坡、日本、韩国、美国等顺序自动故转
+  - { name: Telegram, <<: *regional_fallback }
+  - { name: Discord, <<: *regional_fallback }
+  - { name: Reddit, <<: *regional_fallback }
+  - { name: WhatsApp, <<: *regional_fallback }
+  - { name: Facebook, <<: *regional_fallback }
   - { name: GitHub, <<: *default }
   - { name: Nvidia, <<: *default }
   - { name: OpenWrt, <<: *default }
@@ -214,8 +240,8 @@ proxy-groups:
   - { name: Crypto, <<: *default }
   - { name: Crunchyroll, <<: *default }
   #  通用默认策略组
-  - { name: Amazon, <<: *default }
-  - { name: Games, <<: *default }
+  - { name: Amazon, <<: *regional_fallback }
+  - { name: Games, <<: *regional_fallback }
   # 国内适用的 Apple 服务跟随“国内”（默认直连），不继承 Apple 跨区出口。
   - { name: Apple-CN, type: select, proxies: [国内] }
   - { name: Google, <<: *default }
