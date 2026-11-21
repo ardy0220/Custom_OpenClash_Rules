@@ -6,9 +6,10 @@
 
 # ==================== 代理提供者 Proxy Providers ====================
 proxy-providers:
-  精灵学院:
+
+  吹雪:
     type: http
-    url: ""  # 填入订阅链接 1
+    url: "url"  # 填入订阅链接；首次启用前必须填写
     interval: 3600
     path: ./proxy_provider/provider1.yaml
     # 首次下载必须有可达出口；已有节点缓存且订阅无法直连时，可改为“跨区故转”。
@@ -26,13 +27,13 @@ proxy-providers:
       expected-status: 204
     # 保留订阅声明的 UDP 能力，不统一强制开启。
 
-
 # ==========================================
 # 统一节点源锚点（多订阅集中管理）
 # ==========================================
 providers: &providers
   use:
-    - 精灵学院
+    #- 精灵学院
+    - 吹雪
     # - 千速云
 
 # ========================
@@ -101,7 +102,6 @@ ai-default: &ai_default
     - "新加坡手动"
     - "台湾手动"
     - "全部节点手动"
-    - "全球直连"
     - "拒绝"
 
 direct-default: &direct_default
@@ -186,7 +186,15 @@ proxy-groups:
     expected-status: 204
 
   #  分类策略组
-  - { name: Trade, <<: *default }
+  # 交易业务固定手动出口：默认香港，可手动切换新加坡，不自动跨区或更换节点。
+  - name: Trade
+    type: select
+    proxies:
+      - "香港手动"
+      - "新加坡手动"
+      - "日本自动"
+      - "台湾自动"
+    default-selected: "香港手动"
   - { name: YouTube, <<: *default }
   - { name: TikTok, <<: *default }
   - { name: Netflix, <<: *default }
@@ -654,9 +662,9 @@ rules:
 
   # 加密货币 / 交易
   - RULE-SET,Crypto / Domain,Crypto
-  - RULE-SET,OKX / Domain,Trade
-  - RULE-SET,Bybit / Domain,Trade
-  - RULE-SET,Binance / Domain,Trade
+  - RULE-SET,OKX / Domain,Crypto
+  - RULE-SET,Bybit / Domain,Crypto
+  - RULE-SET,Binance / Domain,Crypto
   - RULE-SET,Trade / Domain,Trade
 
   # 科技与开发
